@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
 import settingsService from '../../../../../../services/settingsService';
 import { ToastProps } from '../../../../../toast/hooks/useToast';
-import { SlackAlert } from './useSlackAlerts';
+import { AlertTypes, SlackAlert } from './useSlackAlerts';
 
 type SlackAlertType = 'BUDGET' | 'USAGE';
 
@@ -12,11 +12,13 @@ const SLACK_ALERT_TYPE = {
 
 type Options = {
   label: 'Cost' | 'Resources';
+  image: string;
   description: string;
   type: SlackAlertType;
 };
 
 type useEditSlackAlertsProps = {
+  alertType: AlertTypes
   currentSlackAlert: SlackAlert | undefined;
   viewId: number;
   closeSlackAlert: (action?: 'hasChanges' | undefined) => void;
@@ -28,7 +30,6 @@ const INITIAL_BUDGET_SLACK_ALERT: Partial<SlackAlert> = {
   name: '',
   type: 'BUDGET',
   budget: '0',
-  IsSlack: true,
 };
 
 const INITIAL_USAGE_SLACK_ALERT: Partial<SlackAlert> = {
@@ -36,10 +37,10 @@ const INITIAL_USAGE_SLACK_ALERT: Partial<SlackAlert> = {
   name: '',
   type: 'USAGE',
   usage: '0',
-  IsSlack: true,
 };
 
 function useEditSlackAlerts({
+  alertType,
   viewId,
   currentSlackAlert,
   closeSlackAlert,
@@ -56,11 +57,13 @@ function useEditSlackAlerts({
   const options: Options[] = [
     {
       label: 'Cost',
+      image: '/assets/img/others/cost.svg',
       description: 'If the total cost goes over the limit threshold',
       type: 'BUDGET'
     },
     {
       label: 'Resources',
+      image: '/assets/img/others/resource.svg',
       description: 'If the number of resources goes over the limit',
       type: 'USAGE'
     }
@@ -82,7 +85,7 @@ function useEditSlackAlerts({
     setSlackAlert(prev => ({ ...prev, ...newData }));
   }
 
-  function submit(e: FormEvent<HTMLFormElement>, edit?: 'edit') {
+  function submit(e: FormEvent<HTMLFormElement>, setViewControllerToAlertsBase: () => void, edit?: 'edit') {
     e.preventDefault();
     setLoading(true);
 
@@ -96,6 +99,7 @@ function useEditSlackAlerts({
       payload.usage = Number(payload.usage);
     }
 
+    payload.isSlack = alertType == 0 ? true : false
     if (!edit) {
       payload.viewId = viewId.toString();
       const payloadJson = JSON.stringify(payload);
@@ -116,6 +120,7 @@ function useEditSlackAlerts({
             message: `The slack alert was successfully created!`
           });
           closeSlackAlert('hasChanges');
+          setViewControllerToAlertsBase();
         }
       });
     }
